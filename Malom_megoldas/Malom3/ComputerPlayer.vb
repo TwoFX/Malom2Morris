@@ -21,25 +21,32 @@
 
 Imports System.Threading
 
-Class ComputerPlayer
+Public Class ComputerPlayer
     Inherits Player
 
     Dim Main As FrmMain
     Dim Settings As FrmSettings
-    
+
     Protected E As Engine
 
-    
+
     Sub New(Optional ByVal UseAdv As Boolean = False)
         E = New Engine(AddressOf DepthKiír, AddressOf SetMainText, AddressOf SetLblPerfEvalText, False, UseAdv)
     End Sub
-    
-   
+
+    Sub New()
+        E = New Engine(AddressOf DepthKiír, AddressOf SetMainText, AddressOf SetLblPerfEvalText, False, False)
+        Timelimit = 2
+        E.InitEngine()
+    End Sub
+
+    Dim Timelimit As Double
+
 
     Public Overrides Sub Enter(ByVal _g As Game)
         MyBase.Enter(_g)
         Main = G.frm
-        Settings = Main.Settings
+        Timelimit = Main.Settings.timelimit
         E.InitEngine()
         If E.UseAdv Then
             E.Advisor.Main = Main
@@ -65,7 +72,9 @@ Class ComputerPlayer
     End Sub
 
     Dim StopThinkTimer As Threading.Timer
-    Public Overrides Sub ToMove(ByVal _s As GameState)
+    Dim Wait As AutoResetEvent
+    Dim Result As Move
+    Public Overrides Function ToMove(ByVal _s As GameState) As Move
         'Debug.Print(Microsoft.VisualBasic.Timer & " ComputerPlayer ToMove") '
         E.StopOpptime()
         E.s = _s
@@ -75,8 +84,11 @@ Class ComputerPlayer
 
         E.ThinkThread = New System.Threading.Thread(AddressOf ThinkAndInvoke)
         E.ThinkThread.Name = "ThinkThread"
-        E.ThinkThread.Start(Tuple.Create(_s, Settings.timelimit))
-    End Sub
+        Wait = New AutoResetEvent(False)
+        E.ThinkThread.Start(Tuple.Create(_s, Timelimit))
+        Wait.WaitOne()
+        Return Result
+    End Function
 
     Public Sub ThinkAndInvoke(s0_idolimit As Tuple(Of GameState, Double))
         Dim result = E.Think(s0_idolimit)
@@ -90,7 +102,7 @@ Class ComputerPlayer
         E.OppTime = True
         If StopThinkTimer IsNot Nothing Then StopThinkTimer.Change(Timeout.Infinite, 0) 'a régi timer-t kikapcsoljuk
         E.ThinkThread = New System.Threading.Thread(AddressOf E.OppTimeThink)
-        E.ThinkThread.Start(Tuple.Create(_s, Settings.timelimit))
+        E.ThinkThread.Start(Tuple.Create(_s, Timelimit))
     End Sub
 
 
@@ -100,13 +112,13 @@ Class ComputerPlayer
     End Sub
 
     Public Sub DepthKiír(ByVal sz As String)
-        Main.BeginInvoke(New FrmMain.DPrintDepth(AddressOf Main.PrintDepth), sz)
+        If Not Main Is Nothing Then Main.BeginInvoke(New FrmMain.DPrintDepth(AddressOf Main.PrintDepth), sz)
     End Sub
     Public Sub SetMainText(ByVal s As String)
-        Main.BeginInvoke(New FrmMain.DSetText(AddressOf Main.SetText), s) 'síma invoke-kal itt nagy baj történik (a főszál néha pont akkor hívja a join-t, amikor éppen itt tart a végrehajtás -> deadlock)
+        If Not Main Is Nothing Then Main.BeginInvoke(New FrmMain.DSetText(AddressOf Main.SetText), s) 'síma invoke-kal itt nagy baj történik (a főszál néha pont akkor hívja a join-t, amikor éppen itt tart a végrehajtás -> deadlock)
     End Sub
     Public Sub SetLblPerfEvalText(ByVal s As String)
-        Main.BeginInvoke(New FrmMain.DLblPerfEvalSettext(AddressOf Main.LblPerfEvalSettext), s)
+        If Not Main Is Nothing Then Main.BeginInvoke(New FrmMain.DLblPerfEvalSettext(AddressOf Main.LblPerfEvalSettext), s)
     End Sub
 
 
@@ -115,9 +127,20 @@ Class ComputerPlayer
         E.CancelThinking()
     End Sub
 
-    Sub InvokeUseThResult(result As Engine.ThinkResult)
+    Sub InvokeUseThResult(tresult As Engine.ThinkResult)
         If E.cancel Then Return
-        Main.BeginInvoke(New Action(Of Engine.ThinkResult)(AddressOf UseThResult), result)
+        Select Case tresult.BestMove.flm
+            Case 0
+                Result = New SetKorong(tresult.BestMove.hová)
+                Wait.Set()
+            Case 1
+                Result = New LeveszKorong(tresult.BestMove.honnan)
+                Wait.Set()
+            Case 2, 3
+                Result = New MoveKorong(tresult.BestMove.honnan, tresult.BestMove.hová)
+                Wait.Set()
+        End Select
+        If Not Main Is Nothing Then Main.BeginInvoke(New Action(Of Engine.ThinkResult)(AddressOf UseThResult), tresult)
     End Sub
 
     Sub UseThResult(ThResult As Engine.ThinkResult)
@@ -131,10 +154,12 @@ Class ComputerPlayer
         If G Is Nothing Then Return 'ha kileptettek kozben 
 
         Dim ThTime As Double = Math.Truncate((System.DateTime.Now - ThResult.st).TotalSeconds * 100) / 100
-        Main.LblCalcDepths.Text = "D: " & ThResult.d
-        Main.LblTime.Visible = True
-        Main.LblTime.Text = "Time: " & ThTime
-        If Settings.ShowEv Then Main.LblEv.Text = "Eval: " & CType(ThResult.ev, Double) / 1000000
+        If Not Main Is Nothing Then
+            Main.LblCalcDepths.Text = "D: " & ThResult.d
+            Main.LblTime.Visible = True
+            Main.LblTime.Text = "Time: " & ThTime
+            If Not Settings Is Nothing AndAlso Settings.ShowEv Then Main.LblEv.Text = "Eval: " & CType(ThResult.ev, Double) / 1000000
+        End If
         'Main.Text = Main.LblEv.Text '
         'Main.Text = WrongProbCuts & " / " & OkProbCuts
         'Try
@@ -142,16 +167,22 @@ Class ComputerPlayer
         'Catch ex As Exception
         'End Try
 
-        If ThTime > 0 Then Main.LblSpeed.Text = Math.Truncate(ThResult.NN / ThTime) & " N/s" Else Main.LblSpeed.Text = ""
+        If Not Main Is Nothing AndAlso ThTime > 0 Then Main.LblSpeed.Text = Math.Truncate(ThResult.NN / ThTime) & " N/s" Else Main.LblSpeed.Text = ""
         'Main.LblSpeed.Text = ThResult.NN & " N"
 
         Select Case ThResult.BestMove.flm
             Case 0
                 G.MakeMove(New SetKorong(ThResult.BestMove.hová))
+                Result = New SetKorong(ThResult.BestMove.hová)
+                Wait.Set()
             Case 1
                 G.MakeMove(New LeveszKorong(ThResult.BestMove.honnan))
+                Result = New LeveszKorong(ThResult.BestMove.honnan)
+                Wait.Set()
             Case 2, 3
                 G.MakeMove(New MoveKorong(ThResult.BestMove.honnan, ThResult.BestMove.hová))
+                Result = New MoveKorong(ThResult.BestMove.honnan, ThResult.BestMove.hová)
+                Wait.Set()
         End Select
     End Sub
 
@@ -162,7 +193,7 @@ Class CombinedPlayer
     Inherits ComputerPlayer
 
     Sub New(Optional ByVal UseAdv As Boolean = True)
-        E = New Engine(AddressOf DepthKiír, AddressOf SetMainText, AddressOf SetLblPerfEvalText, False, UseAdv)
+        MyBase.New(UseAdv)
     End Sub
 
     Public Overrides Sub OppToMove(_s As GameState)

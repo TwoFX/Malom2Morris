@@ -21,7 +21,7 @@
 
 Imports System.Threading
 
-Class Engine
+Public Class Engine
 
     'Dim xorMezők(1, 23) As Int64
     Dim xorMalome, xorAP As Int64
@@ -714,10 +714,10 @@ ujra:
         Return M
     End Function
     Private Sub GetFlyMove(ByVal i As Integer, ByRef M As Move)
-        If T(FlyMoves(i).honnan) = AP AndAlso T(FlyMoves(i).hová) = -1 AndAlso _
-                        (NoCheck OrElse (KC(1 - AP) > 3 OrElse If(SMalomPoz(FlyMoves(i).honnan, FlyMoves(i).hová), _
-                        (MPK(InvMPozSld(FlyMoves(i).honnan, FlyMoves(i).hová), AP) >= 1 AndAlso MPK(InvMPozSld(FlyMoves(i).honnan, FlyMoves(i).hová), 1 - AP) = 0) OrElse MPK(InvMPozSld(FlyMoves(i).honnan, FlyMoves(i).hová), 1 - AP) = 2, _
-                        (MPK(InvMillPos(FlyMoves(i).hová)(0), AP) >= 1 AndAlso MPK(InvMillPos(FlyMoves(i).hová)(0), 1 - AP) = 0) OrElse MPK(InvMillPos(FlyMoves(i).hová)(0), 1 - AP) = 2 OrElse _
+        If T(FlyMoves(i).honnan) = AP AndAlso T(FlyMoves(i).hová) = -1 AndAlso
+                        (NoCheck OrElse (KC(1 - AP) > 3 OrElse If(SMalomPoz(FlyMoves(i).honnan, FlyMoves(i).hová),
+                        (MPK(InvMPozSld(FlyMoves(i).honnan, FlyMoves(i).hová), AP) >= 1 AndAlso MPK(InvMPozSld(FlyMoves(i).honnan, FlyMoves(i).hová), 1 - AP) = 0) OrElse MPK(InvMPozSld(FlyMoves(i).honnan, FlyMoves(i).hová), 1 - AP) = 2,
+                        (MPK(InvMillPos(FlyMoves(i).hová)(0), AP) >= 1 AndAlso MPK(InvMillPos(FlyMoves(i).hová)(0), 1 - AP) = 0) OrElse MPK(InvMillPos(FlyMoves(i).hová)(0), 1 - AP) = 2 OrElse
                         (MPK(InvMillPos(FlyMoves(i).hová)(1), AP) >= 1 AndAlso MPK(InvMillPos(FlyMoves(i).hová)(1), 1 - AP) = 0) OrElse MPK(InvMillPos(FlyMoves(i).hová)(1), 1 - AP) = 2))) Then
             M = FlyMoves(i)
             'M.malome = MalomeHov(M.hová) 'így hibás lenne

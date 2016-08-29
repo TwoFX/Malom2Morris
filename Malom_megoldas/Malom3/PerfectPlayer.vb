@@ -74,6 +74,8 @@ Public Class PerfectPlayer
     Public Sub New()
         secs = Sectors.getsectors()
 
+        Main = Rules.Main
+
         If UseWRGM Then
             Debug.Assert(Rules.CurrVariant = RuleVariant.Standard)
             Eng = New Engine(Nothing, Nothing, Nothing, True)
@@ -303,11 +305,13 @@ Public Class PerfectPlayer
         Dim r As New List(Of T)
         'Dim ma = Integer.MinValue
         'Dim ma As K = f(l(0))
-        Dim ma = MinValue
+        Dim ma As K
+        Dim hasMin As Boolean = False
         For Each m In l
             Dim e = f(m)
             'If e > ma Then
-            If e.CompareTo(ma) > 0 Then
+            If Not hasMin OrElse e.CompareTo(ma) > 0 Then
+                hasMin = True
                 ma = e
                 r.Clear()
                 r.Add(m)
@@ -321,7 +325,7 @@ Public Class PerfectPlayer
     End Function
 
     Public Function GoodMoves(ByVal s As GameState) As List(Of Move)
-        Return AllMaxBy(Function(m) MoveValue(s, m), GetMoveList(s), gui_eval_elem2.min_value(getsec(s)))
+        Return AllMaxBy(Function(m) MoveValue(s, m), GetMoveList(s), gui_eval_elem2.min_value(GetSec(s)))
     End Function
 
     Private Function NGMAfterMove(ByVal s As GameState, ByVal m As Move) As Integer
@@ -368,17 +372,26 @@ Public Class PerfectPlayer
         Return l(rnd.Next(l.Count))
     End Function
 
-    Private Sub SendMoveToGUI(m As Move)
+    Private Function SendMoveToGUI(m As Move) As Malom3.Move
         If Not m.OnlyTaking Then
             If m.MoveType = MoveType.SetMove Then
-                G.MakeMove(New SetKorong(m.hov))
+                If Not G Is Nothing Then
+                    G.MakeMove(New SetKorong(m.hov))
+                End If
+                Return New SetKorong(m.hov)
             Else
-                G.MakeMove(New MoveKorong(m.hon, m.hov))
+                If Not G Is Nothing Then
+                    G.MakeMove(New MoveKorong(m.hon, m.hov))
+                End If
+                Return New MoveKorong(m.hon, m.hov)
             End If
         Else
-            G.MakeMove(New LeveszKorong(m.TakeHon))
+            If Not G Is Nothing Then
+                G.MakeMove(New LeveszKorong(m.TakeHon))
+            End If
+            Return New LeveszKorong(m.TakeHon)
         End If
-    End Sub
+    End Function
 
     'A koronglevetel kezelese:
     '-Az eval nem tud KLE allast kezelni, mivel a solver szempontjabol ezek nem leteznek.
@@ -387,7 +400,7 @@ Public Class PerfectPlayer
     '-Vegulis az lett, hogy amikor a GUI-tol KLE allast kapunk, akkor ujra belenezunk az adatbazisba.
     '   (Igy tudjuk kezelni, ha pl. bepaste-elnek KLE allast (valamint jobban illeszkedik a regi engine-hez))
     <System.Runtime.ExceptionServices.HandleProcessCorruptedStateExceptionsAttribute>
-    Public Overrides Sub ToMove(ByVal s As GameState)
+    Public Overrides Function ToMove(ByVal s As GameState) As Malom3.Move
         Try
             'Dim mh = GoodMoves(s)(0)
             'Dim mh = ChooseRandom(GoodMoves(s))
@@ -414,15 +427,16 @@ Public Class PerfectPlayer
 
             'Main.LblPerfEval.Text = "Ev: " & ma
 
-            SendMoveToGUI(mh)
+            Return SendMoveToGUI(mh)
         Catch ex As KeyNotFoundException
             'Debug.Assert(Not s.KLE) 'kivettuk, de nem tudjuk, hogy miert volt bent
             Main.LblPerfEval.Text = "No secfile"
-            SendMoveToGUI(ChooseRandom(GetMoveList(s)))
+            Return SendMoveToGUI(ChooseRandom(GetMoveList(s)))
         Catch ex As Exception
             MsgBox("Exception in ToMove" & vbCrLf & ex.ToString)
+            Return Nothing
         End Try
-    End Sub
+    End Function
 
 
     Private Function NumGoodMoves(ByVal s As GameState) As Integer

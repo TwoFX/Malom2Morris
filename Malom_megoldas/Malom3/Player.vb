@@ -28,7 +28,7 @@ Public MustInherit Class Player
         If G Is Nothing Then Return 'ez azt jelzi, hogy nem biztos, hogy ez az fv meghivodik leszarmazott osztalybol, ha mar ki vagyunk lepve
         G = Nothing
     End Sub
-    Public MustOverride Sub ToMove(ByVal s As GameState) 'arról értesíti az objektumot, hogy õ következik lépni
+    Public MustOverride Function ToMove(ByVal s As GameState) As Move 'arról értesíti az objektumot, hogy õ következik lépni
     Public Overridable Sub FollowMove(ByVal M As Object) 'az ellenfél lépésérõl értesít
 
     End Sub
@@ -48,9 +48,10 @@ End Class
 
 Class HumanPlayer
     Inherits Player
-    Public Overrides Sub ToMove(ByVal s As GameState)
+    Public Overrides Function ToMove(ByVal s As GameState) As Move
         G.frm._Board.Enabled = True
-    End Sub
+        Return Nothing
+    End Function
     Public Overrides Sub FollowMove(ByVal M As Object)
         G.frm._Board.JelolMezo(M.GetMezok())
     End Sub

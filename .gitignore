@@ -9,7 +9,9 @@
 *.verificationlog2
 *.movegen
 
-
+working/*.exe
+working/*.dll
+working/*.xml
 
 
 

@@ -133,6 +133,7 @@ Hash::~Hash(){
 pair<int, eval_elem2> Hash::hash(board a){
 	a = sym48(f_sym_lookup[a&mask24], a);
 	int h1 = f_lookup[a&mask24] * binom[24 - W][B] + g_lookup[collapse(a)];
+
 	eval_elem_sym2 e = s->get_eval_inner(h1);
 	if(e.cas() != eval_elem_sym2::Sym)
 		return make_pair(h1, e);

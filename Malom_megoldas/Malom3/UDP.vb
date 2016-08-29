@@ -33,9 +33,9 @@ Module UDP
             UdpThread.Start()
         End Sub
 
-        Public Overrides Sub ToMove(ByVal s As GameState)
-
-        End Sub
+        Public Overrides Function ToMove(ByVal s As GameState) As Move
+            Return Nothing
+        End Function
         Public Overrides Sub FollowMove(ByVal M As Object)
             If TypeOf M Is SetKorong Then Send("s " & M.GetMezok()(0))
             If TypeOf M Is LeveszKorong Then Send("l " & M.GetMezok()(0))

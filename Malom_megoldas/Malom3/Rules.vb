@@ -19,7 +19,7 @@
 ' along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 
-Module Rules
+Public Module Rules
     Public MillPos(,), StdLaskerMillPos(15, 2), MoraMillPos(19, 2) As Byte 'megadja az egyes StdLaskerMalomPozícióban részt vevő mezők sorszámát
     Public InvMillPos()(), StdLaskerInvMillPos(23)(), MoraInvMillPos(23)() As Integer 'ith element gives those indexes into MalomPoz where the ith field occurs
     Public BoardGraph(,), StdLaskerBoardGraph(24, 24), MoraBoardGraph(24, 24) As Boolean 'adjacency matrix
@@ -210,6 +210,7 @@ Module Rules
     Public MaxKSZ As Integer
 
     Public Main As FrmMain
+    Public DoNotPlay As Boolean
 
     Public Sub SetVariant(ByVal V As RuleVariant)
         CurrVariant = V
@@ -244,6 +245,7 @@ Module Rules
                     Main.Text = "Malom (Morabaraba (no FBD))"
                 End If
         End Select
+
         Main.MnuPly1Computer.Enabled = (V = RuleVariant.Standard)
         Main.MnuPly2Computer.Enabled = (V = RuleVariant.Standard)
         Main.MnuPly1Combined.Enabled = (V = RuleVariant.Standard)
@@ -255,7 +257,7 @@ Module Rules
             Main.Text &= " (Strong solution)"
         End If
 
-        If Main.Loaded Then Main.NewGame()
+        If Not DoNotPlay AndAlso Main.Loaded Then Main.NewGame()
     End Sub
 
 End Module
