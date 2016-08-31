@@ -15,7 +15,7 @@ namespace Malom2Morris
 	{
 		// Dieser Konstruktor wird garantiert exakt einmal aufgerufen, und zwar bevor Do() aufgerufen wird
 		static Init()
-		{ 
+		{
 			Malom3.Rules.Main = new Malom3.FrmMain();
 			Malom3.Rules.DoNotPlay = true;
 			Malom3.Rules.InitRules();
@@ -110,13 +110,13 @@ namespace Malom2Morris
 
 			if (state.IsValidMove(convertedMove) == MoveValidity.ClosesMill)
 			{
-				// Keine Ahnung für das KLE steht, aber es bedeutet, dass der Spieler einen Zug zurückgeben soll, der einen Stein entfernt
+				// Keine Ahnung für was KLE steht, aber es bedeutet, dass der Spieler einen Zug zurückgeben soll, der einen Stein entfernt
 				// Oder, in Malom-Terminologie, einen LeveszKorong
 				otherState.KLE = true;
 				Malom3.LeveszKorong mo = player.ToMove(otherState) as Malom3.LeveszKorong;
 				convertedMove = mo == null ? null : convertedMove.WithRemove(reverseCoordinateConversion[mo.hon]);
 			}
-			Console.WriteLine(convertedMove.ToString());
+
 			return convertedMove;
 		}
     }
